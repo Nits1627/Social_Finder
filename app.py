@@ -15,7 +15,7 @@ LOGO_PATH = "logo.png"  # Ensure this file is present in your directory
 @st.cache_resource
 def get_gsheet_client():
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_file("service_account.json", scopes=scopes)
+    creds = Credentials.from_service_account_file("fresh-gravity-462706-n2-c53b22d702f7.json", scopes=scopes)
     return gspread.authorize(creds)
 
 def search_google(query):
@@ -72,12 +72,12 @@ st.markdown("""
             background-color: #ffffff;
         }
         .main {
-            color: #000000;
+            color: #FFD700;
             font-family: 'Segoe UI', sans-serif;
         }
         .stButton>button {
             background-color: #FFD700;
-            color: black;
+            color: #ffffff;
             font-weight: bold;
             border: none;
             border-radius: 8px;
@@ -86,6 +86,10 @@ st.markdown("""
         .stTextInput>div>input, .stTextArea>div>textarea {
             background-color: #fffbe6;
             border-radius: 5px;
+            color: #FFD700;
+        }
+        .stDataFrame, .stTable {
+            background-color: #ffffff;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -93,7 +97,7 @@ st.markdown("""
 # --- Logo and Title ---
 st.image(LOGO_PATH, width=150)
 st.title("🔗 Brand Social Link Finder")
-st.markdown("""Easily fetch **Instagram**, **LinkedIn**, and **Website** links for your target brands and export to a **Google Sheet**."")
+st.markdown("""Easily fetch **Instagram**, **LinkedIn**, and **Website** links for your target brands and export to a **Google Sheet**.""")
 
 # --- Input Section ---
 input_method = st.radio("Choose input method:", ["Manual Entry", "Upload CSV"])
@@ -125,5 +129,3 @@ if st.button("🔍 Fetch Social Links") and brand_names:
 
     sheet_url = update_sheet(df_result)
     st.markdown(f"📄 [View the public Google Sheet here]({sheet_url})")
-
-

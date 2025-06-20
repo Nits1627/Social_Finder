@@ -1,6 +1,9 @@
 streamlit
-google-api-python-client
-google-auth
 pandas
 requests
 gspread
+google-auth
+google-api-python-client
+google-generativeai
+playwright
+matplotlib

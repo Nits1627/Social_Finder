@@ -10,11 +10,12 @@ import google.generativeai as genai
 import io
 from datetime import datetime
 import matplotlib.pyplot as plt
+import os
 
 # === CONFIG ===
-CSE_API_KEY = st.secrets["CSE_API_KEY"]
-CSE_CX = st.secrets["CSE_CX"]
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+CSE_API_KEY = os.environ["CSE_API_KEY"]
+CSE_CX = os.environ["CSE_CX"]
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 LOGO_PATH = "logo.png"
 
 genai.configure(api_key=GEMINI_API_KEY)

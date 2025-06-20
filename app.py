@@ -4,8 +4,6 @@ import pandas as pd
 import requests
 import gspread
 from google.oauth2.service_account import Credentials
-import asyncio
-from playwright.async_api import async_playwright
 import google.generativeai as genai
 import io
 from datetime import datetime
@@ -16,6 +14,7 @@ import os
 CSE_API_KEY = os.environ["CSE_API_KEY"]
 CSE_CX = os.environ["CSE_CX"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+APIFY_API_KEY = os.environ["APIFY_API_KEY"]
 LOGO_PATH = "logo.png"
 
 genai.configure(api_key=GEMINI_API_KEY)
@@ -48,27 +47,26 @@ def fetch_links_for_brand(brand):
     linkedin = extract_link(search_google(f"{brand} site:linkedin.com/company"), "linkedin.com/company")
     return {"Brand Name": brand, "Website": website, "Instagram": instagram, "LinkedIn": linkedin}
 
-# === Instagram Scraper and Analyzer ===
-async def scrape_instagram(handle_or_url):
-    handle = handle_or_url.strip().split("/")[-1].replace("@", "")
-    post_data = []
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto(f"https://www.instagram.com/{handle}/")
-        await page.wait_for_selector("article", timeout=10000)
-        posts = await page.query_selector_all('article a')
-        for post in posts[:20]:
-            href = await post.get_attribute("href")
-            url = f"https://www.instagram.com{href}"
-            caption = await page.evaluate("""el => {
-                const fig = el.closest('article').querySelector('img[alt]');
-                return fig ? fig.alt : '';
-            }""", post)
-            timestamp = datetime.now().strftime("%Y-%m-%d")
-            post_data.append({"Post URL": url, "Caption": caption, "Date": timestamp})
-        await browser.close()
-    return post_data
+# === Instagram via Apify ===
+def scrape_instagram_apify(username):
+    handle = username.strip().split("/")[-1].replace("@", "")
+    api_url = f"https://api.apify.com/v2/actor-tasks/dtrungtin~instagram-profile-scraper/run-sync-get-dataset-items?token={APIFY_API_KEY}"
+    payload = {
+        "usernames": [handle],
+        "resultsLimit": 20,
+        "resultsType": "posts"
+    }
+    response = requests.post(api_url, json=payload)
+    items = response.json()
+
+    posts = []
+    for item in items:
+        posts.append({
+            "Post URL": item.get("url"),
+            "Caption": item.get("caption", ""),
+            "Date": item.get("takenAtDate", "")
+        })
+    return posts
 
 def analyze_instagram_posts(post_list):
     captions = "\n\n".join([f"- {p['Caption']}" for p in post_list if p['Caption']])
@@ -98,7 +96,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.image(LOGO_PATH, width=150)
 
-# === Radio-based navigation ===
+# === Navigation ===
 page = st.radio("Choose a section", ["🔗 Brand Link Finder", "📸 Instagram Profile Analyzer"])
 
 # === Section 1: Brand Link Finder ===
@@ -138,7 +136,7 @@ elif page == "📸 Instagram Profile Analyzer":
     if st.button("🔍 Analyze Instagram") and handle_input:
         with st.spinner("Scraping Instagram..."):
             try:
-                post_list = asyncio.run(scrape_instagram(handle_input))
+                post_list = scrape_instagram_apify(handle_input)
                 if not post_list:
                     st.warning("No posts found or profile may be private.")
                 else:
@@ -149,7 +147,7 @@ elif page == "📸 Instagram Profile Analyzer":
                     st.download_button("Download CSV", data=csv_buffer.getvalue(), file_name="instagram_posts.csv", mime="text/csv")
 
                     st.markdown("### 📊 Posting Frequency")
-                    df_posts['Date'] = pd.to_datetime(df_posts['Date'])
+                    df_posts['Date'] = pd.to_datetime(df_posts['Date'], errors='coerce')
                     df_freq = df_posts.groupby(df_posts['Date'].dt.date).size()
                     fig, ax = plt.subplots()
                     df_freq.plot(kind='bar', ax=ax)

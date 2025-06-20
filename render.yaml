@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: streamlit-instagram-tool
+    env: python
+    buildCommand: |
+      apt-get update && \
+      apt-get install -y wget gnupg libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libxshmfence1 libgbm1 ca-certificates fonts-liberation libappindicator3-1 libu2f-udev && \
+      pip install -r requirements.txt && \
+      playwright install
+    startCommand: streamlit run app.py --server.port $PORT --server.enableCORS false
+    plan: free

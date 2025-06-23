@@ -50,14 +50,18 @@ def fetch_links_for_brand(brand):
 # === Instagram via Apify ===
 def scrape_instagram_apify(username):
     handle = username.strip().split("/")[-1].replace("@", "")
-    api_url = f"https://api.apify.com/v2/actor-tasks/dtrungtin~instagram-profile-scraper/run-sync-get-dataset-items?token={APIFY_API_KEY}"
+    api_url = "https://api.apify.com/v2/acts/dtrungtin~instagram-profile-scraper/run-sync-get-dataset-items"
     payload = {
         "usernames": [handle],
         "resultsLimit": 20,
         "resultsType": "posts"
     }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {APIFY_API_KEY}"
+    }
     try:
-        response = requests.post(api_url, json=payload)
+        response = requests.post(api_url, headers=headers, json=payload)
         response.raise_for_status()
         try:
             items = response.json()

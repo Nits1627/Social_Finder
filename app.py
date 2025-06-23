@@ -56,17 +56,36 @@ def scrape_instagram_apify(username):
         "resultsLimit": 20,
         "resultsType": "posts"
     }
-    response = requests.post(api_url, json=payload)
-    items = response.json()
+    try:
+        response = requests.post(api_url, json=payload)
+        response.raise_for_status()
+        try:
+            items = response.json()
+        except ValueError:
+            st.error("❌ Apify returned non-JSON response.")
+            return []
 
-    posts = []
-    for item in items:
-        posts.append({
-            "Post URL": item.get("url"),
-            "Caption": item.get("caption", ""),
-            "Date": item.get("takenAtDate", "")
-        })
-    return posts
+        if isinstance(items, dict) and "error" in items:
+            st.error(f"❌ Apify Error: {items['error']}")
+            return []
+
+        if not isinstance(items, list):
+            st.error(f"❌ Unexpected response from Apify: {items}")
+            return []
+
+        posts = []
+        for item in items:
+            if isinstance(item, dict):
+                posts.append({
+                    "Post URL": item.get("url", ""),
+                    "Caption": item.get("caption", ""),
+                    "Date": item.get("takenAtDate", datetime.now().strftime("%Y-%m-%d"))
+                })
+        return posts
+
+    except Exception as e:
+        st.error(f"❌ Failed to fetch posts from Apify: {e}")
+        return []
 
 def analyze_instagram_posts(post_list):
     captions = "\n\n".join([f"- {p['Caption']}" for p in post_list if p['Caption']])
